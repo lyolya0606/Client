@@ -12,8 +12,7 @@ namespace LibraryWithAlgorithms {
         private const char SPACE = ' ';
 
         public LRU(int buffer) {
-            this.listOfLists = new List<string>();
-            this.lenOfstr = buffer * 2 + 3;
+            
         }
 
         public List<string> GetSteps() {
@@ -76,6 +75,9 @@ namespace LibraryWithAlgorithms {
         }
 
         public int LRUAlgorithm(List<int> input, int buffer, int numOfFilled) {
+            this.listOfLists = new List<string>();
+            this.lenOfstr = buffer * 2 + 3;
+
             List<int> res = new List<int>();
             string list = "";
             int interrupts = 0;
@@ -83,7 +85,7 @@ namespace LibraryWithAlgorithms {
             if (numOfFilled != 0) {
                 res = FillFirst(input, numOfFilled);
             }
-            if (input.Count == buffer) {
+            if (numOfFilled == buffer) {
                 return interrupts;
             }
             int count = numOfFilled;
