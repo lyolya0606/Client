@@ -128,23 +128,35 @@ namespace coursework {
             int numOfFilled = (int)numericUpDownFilledCells.Value;
             List<int> intInputList = ConvertData();
             var service = factory.CreateChannel();
-            List<bool> modifiedBit = new List<bool>();
+            List<bool> modifiedBit;
+            int result;
+            List<string> steps;
             if (alg == "NRU") {
                 modifiedBit = ConvertBitM();
             } else {
                 modifiedBit = MakeBoolListForLRU(intInputList);
             }
-            int result = service.GetInterrupts(intInputList, modifiedBit, buffer, numOfFilled);
-            List<string> steps = service.GetSteps();
+            try {
+                result = service.GetInterrupts(intInputList, modifiedBit, buffer, numOfFilled);
+                steps = service.GetSteps();
+            } catch (Exception) {
+                buttonConnect.ForeColor = Color.Red;
+                buttonConnect.Text = "Connect to the server";
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                MessageBox.Show("The server is not connected. Check the server operation!!", "Error!", buttons, MessageBoxIcon.Error);
+                return;
+            }
             textBoxResult.Text = result.ToString();
+            List<bool> modifiedBitLRU = MakeBoolListForLRU(intInputList);
+            List<bool> modifiedBitNRU = ConvertBitM();
             FillTable(steps, buffer);
-            //DrawChart(intInputList, numOfFilled);
+            DrawChart(intInputList, modifiedBitLRU, modifiedBitNRU, numOfFilled);
         }
 
         private void FillTable(List<string> steps, int buffer) {
             dataGridView1.DataSource = null;
             DataTable dotTable = new DataTable();
-            dotTable.Columns.Add("page", typeof(char));
+            dotTable.Columns.Add("page", typeof(string));
             dotTable.Columns.Add(" ", typeof(char));
             for (int i = 1; i < buffer + 1; i++) {
                 dotTable.Columns.Add(i.ToString(), typeof(string));
@@ -155,26 +167,36 @@ namespace coursework {
             switch (buffer) {
                 case (int)BufferSize.SizeThree:
                 for (int i = 0; i < steps.Count; i++) {
-                    dotTable.Rows.Add(steps[i][0], steps[i][1], steps[i][2].ToString() + steps[i][3].ToString(), steps[i][5].ToString() + steps[i][6].ToString(), steps[i][8].ToString() + steps[i][9].ToString(), steps[i][11]);
+                    dotTable.Rows.Add(steps[i][0].ToString() + steps[i][1].ToString(), steps[i][2], steps[i][3].ToString() + steps[i][4].ToString(), steps[i][6].ToString() + steps[i][7].ToString(), steps[i][9].ToString() + steps[i][10].ToString(), steps[i][12]);
                 }
                 break;
                 case (int)BufferSize.SizeFour:
                 for (int i = 0; i < steps.Count; i++) {
-                    //string first = steps[i][2].ToString() + steps[i][3].ToString();
-                    //first + steps[i][3].ToString();
-                    dotTable.Rows.Add(steps[i][0], steps[i][1], steps[i][2].ToString() + steps[i][3].ToString(), steps[i][5].ToString() + steps[i][6].ToString(), steps[i][8].ToString() + steps[i][9].ToString(), steps[i][11].ToString() + steps[i][12].ToString(), steps[i][14]);
+                    dotTable.Rows.Add(steps[i][0].ToString() + steps[i][1].ToString(), steps[i][2], steps[i][3].ToString() + steps[i][4].ToString(), steps[i][6].ToString() + steps[i][7].ToString(), steps[i][9].ToString() + steps[i][10].ToString(), steps[i][12].ToString() + steps[i][13].ToString(), steps[i][15]);
                 }
                 break;
                 case (int)BufferSize.SizeFive:
                 for (int i = 0; i < steps.Count; i++) {
-                    dotTable.Rows.Add(steps[i][0], steps[i][1], steps[i][2].ToString() + steps[i][3].ToString(), steps[i][5].ToString() + steps[i][6].ToString(), steps[i][8].ToString() + steps[i][9].ToString(), steps[i][11].ToString() + steps[i][12].ToString(), steps[i][14].ToString() + steps[i][15].ToString(), steps[i][17]);
+                    dotTable.Rows.Add(steps[i][0].ToString() + steps[i][1].ToString(), steps[i][2], steps[i][3].ToString() + steps[i][4].ToString(), steps[i][6].ToString() + steps[i][7].ToString(), steps[i][9].ToString() + steps[i][10].ToString(), steps[i][12].ToString() + steps[i][13].ToString(), steps[i][15].ToString() + steps[i][16].ToString(), steps[i][18]);
                 }
                 break;
             }
             dataGridView1.DataSource = dotTable;
         }
 
-        private void DrawChart(List<int> input, int numOfFilled) {
+        private void DrawChart(List<int> input, List<bool> modifiedBitLRU, List<bool> modifiedBitNRU, int numOfFilled) {
+            chart1.Series[0].Points.Clear();
+            chart1.Series[1].Points.Clear();
+            var service = factory.CreateChannel();
+            for (int i = (int)BufferSize.SizeThree; i < (int)BufferSize.SizeFive + 1; i++) {
+                int result = service.GetInterrupts(input, modifiedBitLRU, i, numOfFilled);
+                chart1.Series[0].Points.AddXY(i, result);
+            }
+            for (int i = (int)BufferSize.SizeThree; i < (int)BufferSize.SizeFive + 1; i++) {
+                int result = service.GetInterrupts(input, modifiedBitNRU, i, numOfFilled);
+                chart1.Series[1].Points.AddXY(i, result);
+            }
+            //int result = service.GetInterrupts(input, modifiedBit, buffer, numOfFilled);
             //chart1.Series[0].Points.Clear();
             //chart1.Series[1].Points.Clear();
             //LRU lruForThree = new LRU((int)BufferSize.SizeThree);
@@ -256,7 +278,26 @@ namespace coursework {
         }
 
         private void ButtonConnect_Click(object sender, EventArgs e) {
+            var serviceAddress = "127.0.0.1:10000";
+            var serviceName = "MyService";
+            Uri tcpUri = new Uri($"net.tcp://{serviceAddress}/{serviceName}");
+            
+            EndpointAddress address = new EndpointAddress(tcpUri);
+            NetTcpBinding clientBinding = new NetTcpBinding();
+            //ChannelFactory<IAlgorithm> factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
+            factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
+            try {
+                var service = factory.CreateChannel();
+                List<int> testInput = new List<int>() { 3, 4, 1, 5, 8, 2, 5, 9 };
+                List<bool> testBitM = new List<bool>() { true, true, false, false, true, true, false, false };
+                int v = service.GetInterrupts(testInput, testBitM, 4, 2);
+            } catch (Exception) {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                MessageBox.Show("The server is not connected. Check the server operation!!", "Error!", buttons, MessageBoxIcon.Error);
+                return;
+            }
             buttonConnect.ForeColor = Color.Black;
+            buttonConnect.Text = "Connected";
             comboBoxAlg.Enabled = true;
             comboBoxBuffer.Enabled = true;
             numericUpDownFilledCells.Enabled = true;
@@ -264,13 +305,6 @@ namespace coursework {
             button1.Enabled = true;
             textBoxResult.Enabled = true;
 
-            var serviceAddress = "127.0.0.1:10000";
-            var serviceName = "MyService";
-            Uri tcpUri = new Uri($"net.tcp://{serviceAddress}/{serviceName}");
-            EndpointAddress address = new EndpointAddress(tcpUri);
-            NetTcpBinding clientBinding = new NetTcpBinding();
-            //ChannelFactory<IAlgorithm> factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
-            factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
             //var service = factory.CreateChannel();
             //List<int> x = new List<int>() { 3, 4, 1, 5, 8, 2, 5, 9 };
             //List<bool> n = new List<bool>() { true, true, false, false, true, true, false, false };
