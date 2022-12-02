@@ -10,9 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-//using LibraryWithAlgorithms;
 using System.ServiceModel;
 using LibraryWithLRU_NRU;
+using System.Configuration;
 
 namespace coursework {
     public partial class MainForm : Form {
@@ -41,25 +41,25 @@ namespace coursework {
                     return false;
                 }
 
-                if (int.Parse(i) / 10 > 0) {
+                if ((int.Parse(i) / 10 > 0) || int.Parse(i) < 0) {
                     MessageBoxButtons buttons = MessageBoxButtons.OK;
-                    MessageBox.Show("The numbers must be less than 10!", "Error!", buttons, MessageBoxIcon.Error);
+                    MessageBox.Show("The numbers must be from 0 to 9!", "Error!", buttons, MessageBoxIcon.Error);
                     return false;
                 }
             }
 
             foreach (string i in stringBitM) {
-                if (!int.TryParse(i, out num)) {
+                if ((!int.TryParse(i, out num) || (int.Parse(i) != 0) && (int.Parse(i) != 1))) {
                     MessageBoxButtons buttons = MessageBoxButtons.OK;
                     MessageBox.Show("Bit M must contain only 0 and 1!", "Error!", buttons, MessageBoxIcon.Error);
                     return false;
                 }
 
-                if ((int.Parse(i) != 0) && (int.Parse(i) != 1)) {
-                    MessageBoxButtons buttons = MessageBoxButtons.OK;
-                    MessageBox.Show("Bit M must contain only 0 and 1!", "Error!", buttons, MessageBoxIcon.Error);
-                    return false;
-                }
+                //if ((int.Parse(i) != 0) && (int.Parse(i) != 1)) {
+                //    MessageBoxButtons buttons = MessageBoxButtons.OK;
+                //    MessageBox.Show("Bit M must contain only 0 and 1!", "Error!", buttons, MessageBoxIcon.Error);
+                //    return false;
+                //}
             }
 
             if (stringInputArray.Length != stringBitM.Length) {
@@ -88,7 +88,7 @@ namespace coursework {
                 return false;
             }
             return true;
-            
+
         }
 
         private List<int> ConvertData() {
@@ -121,6 +121,35 @@ namespace coursework {
             return bitMForLRU;
         }
 
+        private void Block() {
+            buttonConnect.ForeColor = Color.Red;
+            buttonConnect.Text = "Connect to the server";
+            comboBoxAlg.Enabled = false;
+            comboBoxBuffer.Enabled = false;
+            numericUpDownFilledCells.Enabled = false;
+            textBoxData.Enabled = false;
+            button1.Enabled = false;
+            textBoxResult.Enabled = false;
+            textBoxBitM.Enabled = false;
+            saveToFileToolStripMenuItem.Enabled = false;
+            readFromFileToolStripMenuItem.Enabled = false;
+            saveResultToFileToolStripMenuItem.Enabled = false;
+        }
+
+        private void Unblock() {
+            buttonConnect.ForeColor = Color.Black;
+            buttonConnect.Text = "Connected";
+            comboBoxAlg.Enabled = true;
+            comboBoxBuffer.Enabled = true;
+            numericUpDownFilledCells.Enabled = true;
+            textBoxData.Enabled = true;
+            button1.Enabled = true;
+            textBoxResult.Enabled = true;
+            textBoxBitM.Enabled = true;
+            saveToFileToolStripMenuItem.Enabled = true;
+            readFromFileToolStripMenuItem.Enabled = true;
+        }
+
         private void Button1_Click(object sender, EventArgs e) {
             if (!CheckInput()) return;
             string alg = comboBoxAlg.Text;
@@ -139,11 +168,10 @@ namespace coursework {
             try {
                 result = service.GetInterrupts(intInputList, modifiedBit, buffer, numOfFilled);
                 steps = service.GetSteps();
-            } catch (Exception) {
-                buttonConnect.ForeColor = Color.Red;
-                buttonConnect.Text = "Connect to the server";
+            } catch (EndpointNotFoundException) {
+                Block();
                 MessageBoxButtons buttons = MessageBoxButtons.OK;
-                MessageBox.Show("The server is not connected. Check the server operation!!", "Error!", buttons, MessageBoxIcon.Error);
+                MessageBox.Show("The server is not connected. Check the server operation!", "Error!", buttons, MessageBoxIcon.Error);
                 return;
             }
             textBoxResult.Text = result.ToString();
@@ -151,6 +179,7 @@ namespace coursework {
             List<bool> modifiedBitNRU = ConvertBitM();
             FillTable(steps, buffer);
             DrawChart(intInputList, modifiedBitLRU, modifiedBitNRU, numOfFilled);
+            saveResultToFileToolStripMenuItem.Enabled = true;
         }
 
         private void FillTable(List<string> steps, int buffer) {
@@ -187,14 +216,21 @@ namespace coursework {
         private void DrawChart(List<int> input, List<bool> modifiedBitLRU, List<bool> modifiedBitNRU, int numOfFilled) {
             chart1.Series[0].Points.Clear();
             chart1.Series[1].Points.Clear();
-            var service = factory.CreateChannel();
-            for (int i = (int)BufferSize.SizeThree; i < (int)BufferSize.SizeFive + 1; i++) {
-                int result = service.GetInterrupts(input, modifiedBitLRU, i, numOfFilled);
-                chart1.Series[0].Points.AddXY(i, result);
-            }
-            for (int i = (int)BufferSize.SizeThree; i < (int)BufferSize.SizeFive + 1; i++) {
-                int result = service.GetInterrupts(input, modifiedBitNRU, i, numOfFilled);
-                chart1.Series[1].Points.AddXY(i, result);
+            try {
+                var service = factory.CreateChannel();
+                for (int i = (int)BufferSize.SizeThree; i < (int)BufferSize.SizeFive + 1; i++) {
+                    int result = service.GetInterrupts(input, modifiedBitLRU, i, numOfFilled);
+                    chart1.Series[0].Points.AddXY(i, result);
+                }
+                for (int i = (int)BufferSize.SizeThree; i < (int)BufferSize.SizeFive + 1; i++) {
+                    int result = service.GetInterrupts(input, modifiedBitNRU, i, numOfFilled);
+                    chart1.Series[1].Points.AddXY(i, result);
+                }
+            } catch (EndpointNotFoundException) {
+                Block();
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                MessageBox.Show("The server is not connected. Check the server operation!", "Error!", buttons, MessageBoxIcon.Error);
+                return;
             }
             //int result = service.GetInterrupts(input, modifiedBit, buffer, numOfFilled);
             //chart1.Series[0].Points.Clear();
@@ -215,15 +251,18 @@ namespace coursework {
 
         private void ReadDataFromFile(StreamReader streamReader) {
             string readData;
+            string readBitM;
             try {
                 readData = streamReader.ReadLine();
+                readBitM = streamReader.ReadLine();
             } catch (FormatException) {
                 MessageBox.Show("File has incorrect data!", "Warning!");
                 return;
             }
-            readData = readData.Trim();
-            string[] stringInputArray;
-            stringInputArray = readData.Split(' ');
+            string data = readData.Trim();
+            string[] stringInputArray = data.Split(' ');
+            string bitM = readBitM.Trim();
+            string[] stringBitM = bitM.Split(' ');
             int num;
 
             foreach (string i in stringInputArray) {
@@ -233,13 +272,23 @@ namespace coursework {
                     return;
                 }
             }
+
+            foreach (string i in stringBitM) {
+                if (!int.TryParse(i, out num) || (int.Parse(i) != 0) && (int.Parse(i) != 1)) {
+                    MessageBoxButtons buttons = MessageBoxButtons.OK;
+                    MessageBox.Show("File has incorrect data!", "Error!", buttons, MessageBoxIcon.Error);
+                    return;
+                }
+            }
             textBoxData.Text = readData;
+            textBoxBitM.Text = readBitM;
         }
 
         private void ReadFromFileToolStripMenuItem_Click(object sender, EventArgs e) {
-            OpenFileDialog openFileDialog = new OpenFileDialog() {
-                InitialDirectory = @"C:\Users\lyolya\source\repos\coursework"
-            };
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            //{
+            //    InitialDirectory = @"C:\Users\lyolya\source\repos\coursework"
+            //};
             openFileDialog.Filter = "txt files (*.txt)|*.txt";
             openFileDialog.FilterIndex = 2;
             openFileDialog.RestoreDirectory = true;
@@ -261,15 +310,18 @@ namespace coursework {
                 return;
             }
 
-            SaveFileDialog saveFileDialog = new SaveFileDialog() {
-                InitialDirectory = @"C:\Users\lyolya\source\repos\coursework"
-            };
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            //{
+            //    InitialDirectory = @"C:\Users\lyolya\source\repos\coursework"
+            //};
             saveFileDialog.Filter = "txt files (*.txt)|*.txt";
             saveFileDialog.FilterIndex = 2;
             saveFileDialog.RestoreDirectory = true;
             if (saveFileDialog.ShowDialog() == DialogResult.OK) {
                 using (var sr = new StreamWriter(saveFileDialog.FileName)) {
                     sr.WriteLine(textBoxData.Text);
+                    sr.WriteLine(textBoxBitM.Text);
+
                 }
                 MessageBox.Show("File was successfully saved!", "Success!", buttons, MessageBoxIcon.Information);
             } else {
@@ -278,32 +330,26 @@ namespace coursework {
         }
 
         private void ButtonConnect_Click(object sender, EventArgs e) {
-            var serviceAddress = "127.0.0.1:10000";
-            var serviceName = "MyService";
-            Uri tcpUri = new Uri($"net.tcp://{serviceAddress}/{serviceName}");
-            
-            EndpointAddress address = new EndpointAddress(tcpUri);
-            NetTcpBinding clientBinding = new NetTcpBinding();
-            //ChannelFactory<IAlgorithm> factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
-            factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
             try {
+                Uri tcpUri = new Uri($"net.tcp://{ConfigurationManager.AppSettings["serviceAddress"]}/{ConfigurationManager.AppSettings["serviceName"]}");
+            //Uri tcpUri = new Uri($"net.tcp://{serviceAddress}/{serviceName}");
+
+                EndpointAddress address = new EndpointAddress(tcpUri);
+                NetTcpBinding clientBinding = new NetTcpBinding();
+                //ChannelFactory<IAlgorithm> factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
+                factory = new ChannelFactory<IAlgorithm>(clientBinding, address);
+
                 var service = factory.CreateChannel();
-                List<int> testInput = new List<int>() { 3, 4, 1, 5, 8, 2, 5, 9 };
-                List<bool> testBitM = new List<bool>() { true, true, false, false, true, true, false, false };
-                int v = service.GetInterrupts(testInput, testBitM, 4, 2);
+                List<int> testInput = new List<int>() { 3, 4, 1, 5, 8 };
+                List<bool> testBitM = new List<bool>() { true, true, false, false, true };
+                int v = service.GetInterrupts(testInput, testBitM, 3, 2);
             } catch (Exception) {
                 MessageBoxButtons buttons = MessageBoxButtons.OK;
-                MessageBox.Show("The server is not connected. Check the server operation!!", "Error!", buttons, MessageBoxIcon.Error);
+                MessageBox.Show("The server is not connected. Check the server operation!", "Error!", buttons, MessageBoxIcon.Error);
                 return;
             }
-            buttonConnect.ForeColor = Color.Black;
-            buttonConnect.Text = "Connected";
-            comboBoxAlg.Enabled = true;
-            comboBoxBuffer.Enabled = true;
-            numericUpDownFilledCells.Enabled = true;
-            textBoxData.Enabled = true;
-            button1.Enabled = true;
-            textBoxResult.Enabled = true;
+            Unblock();
+
 
             //var service = factory.CreateChannel();
             //List<int> x = new List<int>() { 3, 4, 1, 5, 8, 2, 5, 9 };
@@ -313,11 +359,53 @@ namespace coursework {
 
         }
 
-        private void comboBoxAlg_SelectedIndexChanged(object sender, EventArgs e) {
+        //private void ComboBoxAlg_SelectedIndexChanged(object sender, EventArgs e) {
+        //    if (comboBoxAlg.Text == "NRU") {
+        //        textBoxBitM.Enabled = true;
+        //        label6.Enabled = true;
+        //    } else {
+        //        textBoxBitM.Enabled = false;
+        //        label6.Enabled = false;
+        //    }
+        //}
+
+        private void AboutToolStripMenuItem_Click(object sender, EventArgs e) {
+            About about = new About();
+            about.ShowDialog();
+
+        }
+
+        private void ComboBoxAlg_SelectedIndexChanged(object sender, EventArgs e) {
             if (comboBoxAlg.Text == "NRU") {
-                textBoxBitM.Enabled = true;
+                label6.Enabled = true;
             } else {
-                textBoxBitM.Enabled = false;
+                label6.Enabled = false;
+            }
+        }
+
+        private void SettingsToolStripMenuItem_Click(object sender, EventArgs e) {
+            Settings settings = new Settings();
+            settings.ShowDialog();
+            Block();
+        }
+
+        private void SaveResultToFileToolStripMenuItem_Click(object sender, EventArgs e) {
+            MessageBoxButtons buttons = MessageBoxButtons.OK;
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            //{
+            //    InitialDirectory = @"C:\Users\lyolya\source\repos\coursework"
+            //};
+            saveFileDialog.Filter = "txt files (*.txt)|*.txt";
+            saveFileDialog.FilterIndex = 2;
+            saveFileDialog.RestoreDirectory = true;
+            if (saveFileDialog.ShowDialog() == DialogResult.OK) {
+                using (var sr = new StreamWriter(saveFileDialog.FileName)) {
+                    sr.WriteLine(textBoxResult.Text);
+
+                }
+                MessageBox.Show("File was successfully saved!", "Success!", buttons, MessageBoxIcon.Information);
+            } else {
+                MessageBox.Show("File was not saved!", "Error!", buttons, MessageBoxIcon.Error);
             }
         }
     }

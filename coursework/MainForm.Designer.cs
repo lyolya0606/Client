@@ -34,6 +34,7 @@ namespace coursework {
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
             System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.label1 = new System.Windows.Forms.Label();
             this.comboBoxAlg = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -51,6 +52,8 @@ namespace coursework {
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.readFromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveResultToFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.buttonConnect = new System.Windows.Forms.Button();
             this.label6 = new System.Windows.Forms.Label();
@@ -85,7 +88,7 @@ namespace coursework {
             this.comboBoxAlg.Size = new System.Drawing.Size(83, 28);
             this.comboBoxAlg.TabIndex = 2;
             this.comboBoxAlg.Text = "LRU";
-            this.comboBoxAlg.SelectedIndexChanged += new System.EventHandler(this.comboBoxAlg_SelectedIndexChanged);
+            this.comboBoxAlg.SelectedIndexChanged += new System.EventHandler(this.ComboBoxAlg_SelectedIndexChanged);
             // 
             // label2
             // 
@@ -131,7 +134,7 @@ namespace coursework {
             this.textBoxData.Name = "textBoxData";
             this.textBoxData.Size = new System.Drawing.Size(398, 27);
             this.textBoxData.TabIndex = 7;
-            this.textBoxData.Text = "1 3 2 6 8 3 2 0 9 2 4";
+            this.textBoxData.Text = "1 3 2 6 8 3 2 0 9 2 4 0 3 1";
             // 
             // button1
             // 
@@ -301,6 +304,7 @@ namespace coursework {
             this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
+            this.settingsToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
@@ -312,7 +316,8 @@ namespace coursework {
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.readFromFileToolStripMenuItem,
-            this.saveToFileToolStripMenuItem});
+            this.saveToFileToolStripMenuItem,
+            this.saveResultToFileToolStripMenuItem});
             this.fileToolStripMenuItem.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(49, 27);
@@ -321,18 +326,37 @@ namespace coursework {
             // readFromFileToolStripMenuItem
             // 
             this.readFromFileToolStripMenuItem.BackColor = System.Drawing.Color.LightCyan;
+            this.readFromFileToolStripMenuItem.Enabled = false;
             this.readFromFileToolStripMenuItem.Name = "readFromFileToolStripMenuItem";
-            this.readFromFileToolStripMenuItem.Size = new System.Drawing.Size(239, 28);
+            this.readFromFileToolStripMenuItem.Size = new System.Drawing.Size(254, 28);
             this.readFromFileToolStripMenuItem.Text = "Read data from file";
             this.readFromFileToolStripMenuItem.Click += new System.EventHandler(this.ReadFromFileToolStripMenuItem_Click);
             // 
             // saveToFileToolStripMenuItem
             // 
             this.saveToFileToolStripMenuItem.BackColor = System.Drawing.Color.LightCyan;
+            this.saveToFileToolStripMenuItem.Enabled = false;
             this.saveToFileToolStripMenuItem.Name = "saveToFileToolStripMenuItem";
-            this.saveToFileToolStripMenuItem.Size = new System.Drawing.Size(239, 28);
-            this.saveToFileToolStripMenuItem.Text = "Save data to file";
+            this.saveToFileToolStripMenuItem.Size = new System.Drawing.Size(254, 28);
+            this.saveToFileToolStripMenuItem.Text = "Save data to the file";
             this.saveToFileToolStripMenuItem.Click += new System.EventHandler(this.SaveToFileToolStripMenuItem_Click);
+            // 
+            // saveResultToFileToolStripMenuItem
+            // 
+            this.saveResultToFileToolStripMenuItem.BackColor = System.Drawing.Color.LightCyan;
+            this.saveResultToFileToolStripMenuItem.Enabled = false;
+            this.saveResultToFileToolStripMenuItem.Name = "saveResultToFileToolStripMenuItem";
+            this.saveResultToFileToolStripMenuItem.Size = new System.Drawing.Size(254, 28);
+            this.saveResultToFileToolStripMenuItem.Text = "Save result to the file";
+            this.saveResultToFileToolStripMenuItem.Click += new System.EventHandler(this.SaveResultToFileToolStripMenuItem_Click);
+            // 
+            // settingsToolStripMenuItem
+            // 
+            this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Segoe UI", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(85, 27);
+            this.settingsToolStripMenuItem.Text = "Settings";
+            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.SettingsToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
@@ -340,6 +364,7 @@ namespace coursework {
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(71, 27);
             this.aboutToolStripMenuItem.Text = "About";
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
             // buttonConnect
             // 
@@ -359,12 +384,13 @@ namespace coursework {
             // label6
             // 
             this.label6.AutoSize = true;
+            this.label6.Enabled = false;
             this.label6.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.label6.Location = new System.Drawing.Point(31, 365);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(216, 20);
+            this.label6.Size = new System.Drawing.Size(276, 20);
             this.label6.TabIndex = 19;
-            this.label6.Text = "A sequence of bit M (NRU):";
+            this.label6.Text = "A sequence of bit M (only for NRU):";
             // 
             // textBoxBitM
             // 
@@ -375,7 +401,7 @@ namespace coursework {
             this.textBoxBitM.Name = "textBoxBitM";
             this.textBoxBitM.Size = new System.Drawing.Size(398, 27);
             this.textBoxBitM.TabIndex = 18;
-            this.textBoxBitM.Text = "1 1 1 0 0 1 1 0 0 0 1";
+            this.textBoxBitM.Text = "1 1 1 0 0 1 1 0 0 0 1 1 1 1";
             // 
             // MainForm
             // 
@@ -401,10 +427,11 @@ namespace coursework {
             this.Controls.Add(this.label1);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.MaximizeBox = false;
             this.Name = "MainForm";
-            this.Text = "Form1";
+            this.Text = "Client";
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownFilledCells)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
@@ -437,6 +464,8 @@ namespace coursework {
         private Button buttonConnect;
         private Label label6;
         private TextBox textBoxBitM;
+        private ToolStripMenuItem settingsToolStripMenuItem;
+        private ToolStripMenuItem saveResultToFileToolStripMenuItem;
     }
 }
 
